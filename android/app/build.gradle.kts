@@ -5,36 +5,68 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+
+val keystorePropsFile = rootProject.file("/Users/user/Documents/GitHub/KTGAPP/android/key.properties")
+val keystoreProperties = Properties().apply {
+    if (!keystorePropsFile.exists()) {
+        throw GradleException("Missing android/key.properties. Tạo file và điền storeFile/keyAlias/password.")
+    }
+    load(keystorePropsFile.inputStream())
+}
+
+fun req(name: String): String =
+    keystoreProperties.getProperty(name)
+        ?: throw GradleException("Missing '$name' in android/key.properties")
+
+val storePath = req("storeFile")
+val storeFileResolved = file(storePath)
+if (!storeFileResolved.exists()) {
+    throw GradleException("Keystore not found at: ${storeFileResolved.absolutePath}.\n" +
+            "HINT: Nếu keystore ở ROOT, dùng 'storeFile=../../upload-keystore.jks'.")
+}
+
 android {
     namespace = "com.kenhtingame.ktg_news_app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        //sourceCompatibility = JavaVersion.VERSION_11
+        //targetCompatibility = JavaVersion.VERSION_11
         // Nếu dùng AGP 8.x, khuyến nghị Java 17:
-        // sourceCompatibility = JavaVersion.VERSION_17
-        // targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        //jvmTarget = JavaVersion.VERSION_11.toString()
         // Với Java 17:
-        // jvmTarget = JavaVersion.VERSION_17.toString()
+         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
         applicationId = "com.kenhtingame.ktg_news_app"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = flutter.minSdkVersion // hoặc giá trị bạn đang dùng
+        targetSdk = 36
+        manifestPlaceholders["facebookAppId"] = "318591425269859"
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = storeFileResolved
+            storePassword = req("storePassword")
+            keyAlias = req("keyAlias")
+            keyPassword = req("keyPassword")
+        }
+    }
+
     buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            // ⚠️ Đảm bảo KHÔNG dùng debug ở đây
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
