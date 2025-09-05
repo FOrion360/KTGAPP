@@ -1,0 +1,1 @@
+-keep class com.kenhtingame.ktg_news_app.BuildConfig { *; }
