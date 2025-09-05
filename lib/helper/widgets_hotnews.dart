@@ -3,20 +3,21 @@ import 'package:ktg_news_app/views/article_view.dart';
 import 'package:intl/intl.dart';
 import 'package:html_character_entities/html_character_entities.dart';
 
-Widget MyAppBar(){
+/// AppBar dùng cho Scaffold.appBar
+PreferredSizeWidget MyAppBar() {
   return AppBar(
+    centerTitle: true,
     title: Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
+      children: const <Widget>[
         Text(
           "Kênh Tin ",
-          style:
-          TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
         ),
         Text(
           "Game",
           style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
-        )
+        ),
       ],
     ),
     backgroundColor: Colors.transparent,
@@ -24,108 +25,127 @@ Widget MyAppBar(){
   );
 }
 
-
 class NewsTile extends StatelessWidget {
-  final String imgUrl, title, desc, content, posturl, categoryCatName, publshedAt, catNameKey
-  , gameNewsKey, id, newsCatId, newsSource;
+  const NewsTile({
+    super.key,
+    required this.imgUrl,
+    required this.title,
+    required this.desc,
+    this.content = '',
+    required this.posturl,
+    required this.categoryCatName,
+    required this.publshedAt,
+    required this.catNameKey,
+    required this.gameNewsKey,
+    required this.id,
+    required this.newsCatId,
+    required this.newsSource,
+  });
 
-  NewsTile({this.imgUrl, this.desc, this.title, this.content, this.posturl, this.categoryCatName, this.publshedAt, this.catNameKey
-    , this.gameNewsKey, this.id, this.newsCatId, this.newsSource});
+  final String imgUrl;
+  final String title;
+  final String desc;
+  final String content;
+  final String posturl;
+  final String categoryCatName;
+  final String publshedAt; // giữ nguyên tên field cũ
+  final String catNameKey;
+  final String gameNewsKey;
+  final String id;
+  final String newsCatId;
+  final String newsSource;
 
   @override
   Widget build(BuildContext context) {
+    final String safeTitle = HtmlCharacterEntities.decode(title);
+
+    final String formattedDate = () {
+      try {
+        final dt = DateTime.parse(publshedAt);
+        return DateFormat('dd-MM-yyyy HH:mm:ss').format(dt);
+      } catch (_) {
+        return publshedAt; // fallback: hiển thị raw nếu parse lỗi
+      }
+    }();
+
     return GestureDetector(
       onTap: () {
-        Navigator.pop(context);
-        Navigator.push(context, MaterialPageRoute(
-            builder: (context) =>
-                ArticleView(
-                    urlToImage: imgUrl,
-                    title: title,
-                    desc: desc,
-                    //content: content,
-                    postUrl: posturl,
-                    categoryCatName: categoryCatName,
-                    publshedAt: publshedAt,
-                    catNameKey: catNameKey,
-                    gameNewsKey: gameNewsKey,
-                    id: id,
-                    newsCatId: newsCatId,
-                    newsSource: newsSource
-                )
-        ));
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ArticleView(
+              urlToImage: imgUrl,
+              title: title,
+              desc: desc,
+              // content: content,
+              postUrl: posturl,
+              categoryCatName: categoryCatName,
+              publshedAt: publshedAt,
+              catNameKey: catNameKey,
+              gameNewsKey: gameNewsKey,
+              id: id,
+              newsCatId: newsCatId,
+              newsSource: newsSource,
+            ),
+          ),
+        );
       },
       child: Container(
-          margin: EdgeInsets.only(bottom: 10),
-          width: MediaQuery
-              .of(context)
-              .size
-              .width,
-          child: Container(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.bottomCenter,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                      bottomRight: Radius.circular(6),
-                      bottomLeft: Radius.circular(6))
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: Image.network(
-                        imgUrl,
-                        height: 200,
-                        width: MediaQuery.of(context).size.width,
-                        fit: BoxFit.cover,
-                      )),
-                  Text(
-                    HtmlCharacterEntities.decode(title),
-                    maxLines: 10,
-                    style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.only(top: 10.0, bottom: 5),
-                    child: Row(
-                      children: [
-                        Align(
-                            alignment: Alignment.centerLeft,
-                            child: Icon(Icons.calendar_today, size: 16)
-                        ),
-                        Container(
-                            margin: const EdgeInsets.only(left: 5.0),
-                            child: Text(
-                              DateFormat('dd-MM-yyyy HH:mm:ss').format(DateTime
-                                  .parse(publshedAt)),
-                              style: TextStyle(fontSize: 16.0),
-                            )
-                        )
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 5,
-                  ),
-                ],
+        margin: const EdgeInsets.only(bottom: 10),
+        width: MediaQuery.of(context).size.width,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                imgUrl,
+                height: 200,
+                width: MediaQuery.of(context).size.width,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  height: 200,
+                  color: Colors.grey.shade200,
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.broken_image),
+                ),
               ),
             ),
-          )),
+            const SizedBox(height: 8),
+            Text(
+              safeTitle,
+              maxLines: 10,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 16),
+                const SizedBox(width: 5),
+                Text(
+                  formattedDate,
+                  style: const TextStyle(fontSize: 16.0),
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+          ],
+        ),
+      ),
     );
   }
 
+  // (giữ lại nếu nơi khác còn gọi)
   String removeAllHtmlTags(String htmlText) {
-    RegExp exp = RegExp(
-        r"<[^>]*>",
-        multiLine: true,
-        caseSensitive: true
-    );
-
+    final exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
     return htmlText.replaceAll(exp, '');
   }
 }

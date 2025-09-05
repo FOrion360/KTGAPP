@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:social_share_plugin/social_share_plugin.dart' as SocialSharePlugin;
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:social_share_plugin/social_share_plugin.dart';
@@ -14,239 +15,197 @@ import 'package:ktg_news_app/helper/widgets_hotnews.dart';
 import 'package:ktg_news_app/models/article.dart';
 
 import 'package:http/http.dart' as http;
-import 'package:ktg_news_app/models/article.dart';
+// import 'package:ktg_news_app/models/article.dart'; // trùng -> bỏ
 import 'dart:convert';
 
 import 'package:html/dom.dart' as dom;
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:bottom_loader/bottom_loader.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter_config/flutter_config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:contained_tab_bar_view/contained_tab_bar_view.dart';
 
-var newsListRelated;
-var _newsDetail;
+/// Biến global (đã type + nullable)
+List<dynamic>? newsListRelated;
+List<dynamic>? newsListHot;
+List<dynamic>? _newsDetail;
 
-//Related News
+/// ---------------- Related News ----------------
 class RelatedNewsByCat extends StatefulWidget {
-  const RelatedNewsByCat({Key key}) : super(key: key);
+  const RelatedNewsByCat({super.key});
 
   @override
-  _RelatedNewsByCatState createState() => _RelatedNewsByCatState();
+  State<RelatedNewsByCat> createState() => _RelatedNewsByCatState();
 }
 
 class _RelatedNewsByCatState extends State<RelatedNewsByCat> {
+  @override
   Widget build(BuildContext context) {
-    if(newsListRelated != null) {
-      return
-        Container(child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            ///Html(data: "<h2 style='text-decoration: underline;'>CÙNG CHUYÊN MỤC</h2>"),
-            Container(
-              margin: EdgeInsets.only(top: 0),
-              child: ListView.builder(
-                itemCount: newsListRelated.length,
-                shrinkWrap: true,
-                physics: ClampingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return NewsTile(
-                    imgUrl: newsListRelated[index].urlToImage ?? "",
-                    title: newsListRelated[index].title ?? "",
-                    desc: newsListRelated[index].description ?? "",
-                    //content: newsListRelated[index].content ?? "",
-                    posturl: newsListRelated[index].articleUrl ?? "",
-                    categoryCatName: newsListRelated[index].categoryCatName ?? "",
-                    publshedAt: newsListRelated[index].publshedAt.toString() ?? "",
-                    catNameKey: newsListRelated[index].catNameKey.toString() ?? "",
-                    gameNewsKey: newsListRelated[index].gameNewsKey.toString() ?? "",
-                    id: newsListRelated[index].id.toString() ?? "",
-                    newsCatId: newsListRelated[index].newsCatId.toString() ?? "",
-                    newsSource: newsListRelated[index].newsSource.toString() ?? "",
-                  );
-                },
-              ),
-            ),
+    if (newsListRelated == null) return const SizedBox.shrink();
 
-          ],
-        ),
-        );
-    }
-    else{
-      return Text("");
-    }
+    return Container(
+      margin: const EdgeInsets.only(top: 0),
+      child: ListView.builder(
+        itemCount: newsListRelated!.length,
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        itemBuilder: (context, index) {
+          final n = newsListRelated![index];
+          return NewsTile(
+            imgUrl: n.urlToImage ?? "",
+            title: n.title ?? "",
+            desc: n.description ?? "",
+            posturl: n.articleUrl ?? "",
+            categoryCatName: n.categoryCatName ?? "",
+            publshedAt: (n.publshedAt ?? '').toString(),
+            catNameKey: (n.catNameKey ?? '').toString(),
+            gameNewsKey: (n.gameNewsKey ?? '').toString(),
+            id: (n.id ?? '').toString(),
+            newsCatId: (n.newsCatId ?? '').toString(),
+            newsSource: (n.newsSource ?? '').toString(),
+          );
+        },
+      ),
+    );
   }
 }
 
-//Hot News
-var newsListHot;
+/// ---------------- Hot News ----------------
 class HotNewsByCat extends StatefulWidget {
-  const HotNewsByCat({Key key}) : super(key: key);
+  const HotNewsByCat({super.key});
 
   @override
-  _HotNewsByCatState createState() => _HotNewsByCatState();
+  State<HotNewsByCat> createState() => _HotNewsByCatState();
 }
 
 class _HotNewsByCatState extends State<HotNewsByCat> {
+  @override
   Widget build(BuildContext context) {
-    if(newsListHot != null) {
-      return
-        Container(child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            ///Html(data: "<h2 style='text-decoration: underline;'>CÙNG CHUYÊN MỤC</h2>"),
-            Container(
-              margin: EdgeInsets.only(top: 0),
-              child: ListView.builder(
-                itemCount: newsListHot.length,
-                shrinkWrap: true,
-                physics: ClampingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return NewsTile(
-                    imgUrl: newsListHot[index].urlToImage ?? "",
-                    title: newsListHot[index].title ?? "",
-                    desc: newsListHot[index].description ?? "",
-                    //content: newsListHot[index].content ?? "",
-                    posturl: newsListHot[index].articleUrl ?? "",
-                    categoryCatName: newsListHot[index].categoryCatName ?? "",
-                    publshedAt: newsListHot[index].publshedAt.toString() ?? "",
-                    catNameKey: newsListHot[index].catNameKey.toString() ?? "",
-                    gameNewsKey: newsListHot[index].gameNewsKey.toString() ?? "",
-                    id: newsListHot[index].id.toString() ?? "",
-                    newsCatId: newsListHot[index].newsCatId.toString() ?? "",
-                    newsSource: newsListHot[index].newsSource.toString() ?? "",
-                  );
-                },
-              ),
-            ),
+    if (newsListHot == null) return const SizedBox.shrink();
 
-          ],
-        ),
-        );
-    }
-    else{
-      return Text("");
-    }
+    return Container(
+      margin: const EdgeInsets.only(top: 0),
+      child: ListView.builder(
+        itemCount: newsListHot!.length,
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        itemBuilder: (context, index) {
+          final n = newsListHot![index];
+          return NewsTile(
+            imgUrl: n.urlToImage ?? "",
+            title: n.title ?? "",
+            desc: n.description ?? "",
+            posturl: n.articleUrl ?? "",
+            categoryCatName: n.categoryCatName ?? "",
+            publshedAt: (n.publshedAt ?? '').toString(),
+            catNameKey: (n.catNameKey ?? '').toString(),
+            gameNewsKey: (n.gameNewsKey ?? '').toString(),
+            id: (n.id ?? '').toString(),
+            newsCatId: (n.newsCatId ?? '').toString(),
+            newsSource: (n.newsSource ?? '').toString(),
+          );
+        },
+      ),
+    );
   }
 }
 
-//News Detail
+/// ---------------- News Detail list (HTML content blocks) ----------------
 class NewsDetail extends StatefulWidget {
-  const NewsDetail({Key key}) : super(key: key);
+  const NewsDetail({super.key});
 
   @override
-  _NewsDetailState createState() => _NewsDetailState();
+  State<NewsDetail> createState() => _NewsDetailState();
 
-  getNewsDetail(String catNameKey, String pageNo, String s, String t, String u, String id) {}
+  // giữ stub cho compiles cũ (không dùng ở đây)
+  void getNewsDetail(
+      String catNameKey, String pageNo, String s, String t, String u, String id) {}
 }
 
 class _NewsDetailState extends State<NewsDetail> {
+  @override
   Widget build(BuildContext bcontext) {
-    if(_newsDetail != null) {
-      return
-        Container(child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            Container(
-              margin: EdgeInsets.only(top: 0),
-              child: ListView.builder(
-                itemCount: _newsDetail.length,
-                shrinkWrap: true,
-                physics: ClampingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return
-                  Html(data: _newsDetail[index].content ?? "",
-                    onLinkTap: (String url, RenderContext context,
-                        Map<String, String> attributes, dom.Element element) {
-                      //open URL in webview, or launch URL in browser, or any other logic here
-                      //launch(url);
+    if (_newsDetail == null) return const SizedBox.shrink();
 
-                      showAlertDialog(bcontext, url);
-                    },
-                    customImageRenders: {
-                      // networkSourceMatcher(domains: ["flutter.dev"]):
-                      //     (context, attributes, element) {
-                      //   return FlutterLogo(size: 36);
-                      // },
-                      // networkSourceMatcher(): networkImageRender(
-                      //   headers: {"Custom-Header": "some-value"},
-                      //   altWidget: (alt) => Text(alt ?? ""),
-                      //   loadingWidget: () => Text("Loading..."),
-                      // ),
-                      //     (attr, _) => attr["src"] != null && attr["src"].startsWith("/game4v"):
-                      // networkImageRender(
-                      //     mapUrl: (url) => "https://upload.wikimedia.org" + url),
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-        );
-    }
-    else{
-      return Text("");
-    }
+    return Container(
+      margin: const EdgeInsets.only(top: 0),
+      child: ListView.builder(
+        itemCount: _newsDetail!.length,
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        itemBuilder: (context, index) {
+          final content = _newsDetail![index].content ?? "";
+          return Html(
+            data: content,
+            // onLinkTap: (url, context, attributes, element) {
+            //   if (url == null || url.isEmpty) return;
+            //   showAlertDialog(bcontext, url);
+            // },
+          );
+        },
+      ),
+    );
   }
 
-  showAlertDialog(BuildContext context, String url) {
-    // set up the buttons
-    Widget cancelButton = TextButton(
-      child: Text("Hủy bỏ"),
-      onPressed:  () { Navigator.of(context).pop(); },
+  void showAlertDialog(BuildContext context, String url) {
+    final cancelButton = TextButton(
+      child: const Text("Hủy bỏ"),
+      onPressed: () => Navigator.of(context).pop(),
     );
-    Widget continueButton = TextButton(
-      child: Text("Tiếp tục"),
-      onPressed:  () { launch(url); Navigator.of(context).pop();},
-    );
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Thông Báo"),
-      content: Text("Bạn có thật sự muốn truy cập liên kết: " + url + " ?"),
-      actions: [
-        cancelButton,
-        continueButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
+    final continueButton = TextButton(
+      child: const Text("Tiếp tục"),
+      onPressed: () async {
+        await launchUrl(Uri.parse(url));
+        if (context.mounted) Navigator.of(context).pop();
       },
     );
+
+    final alert = AlertDialog(
+      title: const Text("Thông Báo"),
+      content: Text("Bạn có thật sự muốn truy cập liên kết: $url ?"),
+      actions: [cancelButton, continueButton],
+    );
+
+    showDialog(context: context, builder: (_) => alert);
   }
 }
 
+/// ---------------- Article View (detail page) ----------------
 class ArticleView extends StatefulWidget {
-  final String urlToImage;
-  final String title;
-  final String desc;
-  //final String content;
-  final String postUrl;
-  final String categoryCatName;
-  final String publshedAt;
-  final String catNameKey;
-  final String gameNewsKey;
-  final String id;
-  final String newsCatId;
-  final String newsSource;
+  const ArticleView({
+    super.key,
+    this.urlToImage,
+    this.title,
+    this.desc,
+    this.postUrl,
+    this.categoryCatName,
+    this.publshedAt,
+    this.catNameKey,
+    this.gameNewsKey,
+    this.id,
+    this.newsCatId,
+    this.newsSource,
+  });
 
-  ArticleView({this.urlToImage, this.title, this.desc,
-    //this.content,
-    this.postUrl, this.categoryCatName, this.publshedAt, this.catNameKey
-    , this.gameNewsKey, this.id, this.newsCatId, this.newsSource});
+  final String? urlToImage;
+  final String? title;
+  final String? desc;
+  final String? postUrl;
+  final String? categoryCatName;
+  final String? publshedAt;
+  final String? catNameKey;
+  final String? gameNewsKey;
+  final String? id;
+  final String? newsCatId;
+  final String? newsSource;
 
   @override
-  _ArticleViewState createState() => _ArticleViewState();
+  State<ArticleView> createState() => _ArticleViewState();
 }
 
 class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin {
-  //Admod
-  BannerAd _anchoredAdaptiveAd;
+  // Ads
+  BannerAd? _anchoredAdaptiveAd;
   bool _isLoaded = false;
 
   @override
@@ -256,210 +215,179 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
   }
 
   Future<void> _loadAd() async {
-    // Get an AnchoredAdaptiveBannerAdSize before loading the ad.
-    final AnchoredAdaptiveBannerAdSize size =
+    final AnchoredAdaptiveBannerAdSize? size =
     await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-        MediaQuery
-            .of(context)
-            .size
-            .width
-            .truncate());
+      MediaQuery.of(context).size.width.truncate(),
+    );
 
     if (size == null) {
+      // ignore: avoid_print
       print('Unable to get height of anchored banner.');
       return;
     }
 
-    _anchoredAdaptiveAd = BannerAd(
-      // TODO: replace these test ad units with your own ad unit.
-      adUnitId: Platform.isAndroid
-          ? FlutterConfig.get('GOOGLE_ADMOD_BANNER_ID')
-          : FlutterConfig.get('GOOGLE_ADMOD_BANNER_ID'),
+    final adUnitId = dotenv.env['GOOGLE_ADMOD_BANNER_ID'] ?? '';
+    if (adUnitId.isEmpty) {
+      // ignore: avoid_print
+      print('Missing GOOGLE_ADMOD_BANNER_ID in .env');
+      return;
+    }
+
+    final banner = BannerAd(
+      adUnitId: adUnitId,
       size: size,
-      request: AdRequest(),
+      request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {
-          print('$ad loaded: ${ad.responseInfo}');
+          // ignore: avoid_print
+          print('$ad loaded: ${(ad as BannerAd).responseInfo}');
           setState(() {
-            // When the ad is loaded, get the ad size and use it to set
-            // the height of the ad container.
-            _anchoredAdaptiveAd = ad as BannerAd;
+            _anchoredAdaptiveAd = ad;
             _isLoaded = true;
           });
         },
         onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          // ignore: avoid_print
           print('Anchored adaptive banner failedToLoad: $error');
           ad.dispose();
         },
       ),
     );
-    return _anchoredAdaptiveAd.load();
+    await banner.load();
   }
 
-  //Admod
-
-  bool _loading = true;
   bool _visible = false;
-  BottomLoader bl;
-  ScrollController _scrollController;
-  bool _showBackToTopButton = false;
+  BottomLoader? bl;
+  late final ScrollController _scrollController;
 
-  _scrollListener() {
-    // if (_scrollController.offset >= 200) {
-    //   if(!_showBackToTopButton) {
-    //     _showBackToTopButton = true; // show the back-to-top button
-    //   }
-    // } else {
-    //   _showBackToTopButton = false; // hide the back-to-top button
-    // }
-  }
+  void _scrollListener() {}
 
-  //NewsDetail
-  void getNewsDetail(String catNameKey, String pageNo) async {
-    //bl.display();
+  // --- Fetch detail / related / hot ---
+  Future<void> getNewsDetail(String catNameKey, String pageNo) async {
     _visible = false;
     EasyLoading.show(status: 'Đang tải...');
 
-    //News Detail
-    NewsDetailProcess newsDetailProcess = NewsDetailProcess();
+    final newsDetailProcess = NewsDetailProcess();
     await newsDetailProcess.getNewsDetail(
-        catNameKey, pageNo, '5', 'false', 'true', widget.id);
+      catNameKey,
+      pageNo,
+      '5',
+      'false',
+      'true',
+      widget.id ?? '',
+    );
     _newsDetail = newsDetailProcess.newsDetail;
 
     setState(() {
-      //bl.hide();
       _visible = true;
       EasyLoading.dismiss();
     });
   }
 
-  //NewsRelated
-  void getNewsRelated(String catNameKey, String pageNo) async {
-    //bl.display();
+  Future<void> getNewsRelated(String catNameKey, String pageNo) async {
     _visible = false;
-
-    News news = News();
-    await news.getNews(catNameKey, pageNo, '5', 'false', 'true', widget.id);
+    final news = News();
+    await news.getNews(catNameKey, pageNo, '5', 'false', 'true', widget.id ?? '');
     newsListRelated = news.news;
-
-    setState(() {
-      //bl.hide();
-      _visible = true;
-    });
+    setState(() => _visible = true);
   }
 
-  //NewsHot
-  void getNewsHot(String catNameKey, String pageNo) async {
-    //bl.display();
+  Future<void> getNewsHot(String catNameKey, String pageNo) async {
     _visible = false;
-
-    News news = News();
-    await news.getNews(catNameKey, pageNo, '5', 'true', 'false', widget.id);
+    final news = News();
+    await news.getNews(catNameKey, pageNo, '5', 'true', 'false', widget.id ?? '');
     newsListHot = news.news;
-
-    setState(() {
-      //bl.hide();
-      _visible = true;
-    });
+    setState(() => _visible = true);
   }
 
-  showAlertDialog(BuildContext context, String url) {
-    // set up the buttons
-    Widget cancelButton = TextButton(
-      child: Text("Hủy bỏ"),
-      onPressed: () {
-        Navigator.of(context).pop();
-      },
+  void showAlertDialog(BuildContext context, String url) {
+    final cancelButton = TextButton(
+      child: const Text("Hủy bỏ"),
+      onPressed: () => Navigator.of(context).pop(),
     );
-    Widget continueButton = TextButton(
-      child: Text("Tiếp tục"),
-      onPressed: () {
-        launch(url);
-        Navigator.of(context).pop();
+    final continueButton = TextButton(
+      child: const Text("Tiếp tục"),
+      onPressed: () async {
+        await launchUrl(Uri.parse(url));
+        if (context.mounted) Navigator.of(context).pop();
       },
     );
 
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Thông Báo"),
-      content: Text("Bạn có thật sự muốn truy cập liên kết: " + url + " ?"),
-      actions: [
-        cancelButton,
-        continueButton,
-      ],
+    final alert = AlertDialog(
+      title: const Text("Thông Báo"),
+      content: Text("Bạn có thật sự muốn truy cập liên kết: $url ?"),
+      actions: [cancelButton, continueButton],
     );
 
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
+    showDialog(context: context, builder: (_) => alert);
   }
 
   Html DescContentProcess(String desc, int newsCatId) {
-    //List<int> g4vId = [19,20,21,22,23,24];
-    // if( newsCatId != 19 && newsCatId != 20 && newsCatId != 21 && newsCatId != 22
-    //     && newsCatId != 23 && newsCatId != 24){
-    //
-    // }
-    // else{
-    //   return Html(data: "");
-    // }
-
     return Html(
-        data: "<span style='font-size: 18px; font-style: italic;'><b>" +
-            widget.desc + "</b></span>");
+      data:
+      "<span style='font-size: 18px; font-style: italic;'><b>${widget.desc ?? ''}</b></span>",
+    );
   }
 
   @override
   void dispose() {
-    _scrollController.dispose(); // dispose the controller
+    _scrollController.dispose();
+    _anchoredAdaptiveAd?.dispose();
     super.dispose();
   }
 
-  // This function is triggered when the user presses the back-to-top button
   void _scrollToTop() {
-    _scrollController.animateTo(1,
-        duration: Duration(seconds: 1), curve: Curves.linear);
+    _scrollController.animateTo(
+      1,
+      duration: const Duration(seconds: 1),
+      curve: Curves.linear,
+    );
   }
 
   @override
   void initState() {
-    // TODO: implement initState
-    String catNameKey = '0';
-    if (widget.catNameKey != null) {
-      catNameKey = widget.catNameKey;
-    }
-
     super.initState();
 
-    _scrollController = ScrollController();
-    _scrollController.addListener(_scrollListener);
+    _scrollController = ScrollController()..addListener(_scrollListener);
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => getNewsDetail(widget.catNameKey, '1'));
+    // Lấy catNameKey an toàn
+    final catKey = (widget.catNameKey?.isNotEmpty ?? false)
+        ? widget.catNameKey!
+        : '0';
 
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => getNewsRelated(widget.catNameKey, '1'));
-
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => getNewsHot(widget.catNameKey, '1'));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      getNewsDetail(catKey, '1');
+      getNewsRelated(catKey, '1');
+      getNewsHot(catKey, '1');
+    });
   }
 
-  final Completer<WebViewController> _controller = Completer<
-      WebViewController>();
+  final Completer<WebViewController> _controller =
+  Completer<WebViewController>();
 
   @override
   Widget build(BuildContext bcontext) {
-    bl = new BottomLoader(context);
-    bl.style(
+    bl ??= BottomLoader(context)
+      ..style(
         message: 'Đang tải tin tức...',
         backgroundColor: Colors.white,
-        messageTextStyle: TextStyle(
-            color: Colors.black, fontSize: 15.0, fontWeight: FontWeight.w600)
-    );
+        messageTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 15.0,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+
+    final parsedDateText = () {
+      final s = widget.publshedAt;
+      if (s == null || s.isEmpty) return '';
+      try {
+        final dt = DateTime.parse(s);
+        return DateFormat('dd-MM-yyyy HH:mm:ss').format(dt);
+      } catch (_) {
+        return s; // fallback hiển thị raw
+      }
+    }();
 
     return Scaffold(
       appBar: AppBar(
@@ -467,20 +395,23 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Text(
-              widget.categoryCatName,
-              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
-            )
+              widget.categoryCatName ?? '',
+              style:
+              const TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
         actions: <Widget>[
-          new IconButton(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            icon: new Icon(Icons.share),
+          IconButton(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            icon: const Icon(Icons.share),
             highlightColor: Colors.pink,
             onPressed: () async {
               await SocialSharePlugin.shareToFeedFacebookLink(
-                  quote: 'Kênh Tin Game - ' + widget.categoryCatName,
-                  url: 'https://kenhtingame.com/' + widget.catNameKey + '/1');
+                quote: 'Kênh Tin Game - ${widget.categoryCatName ?? ''}',
+                url:
+                'https://kenhtingame.com/${widget.catNameKey ?? '0'}/1',
+              );
             },
           ),
         ],
@@ -491,129 +422,120 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
         padding: const EdgeInsets.only(bottom: 50.0),
         child: FloatingActionButton(
           onPressed: _scrollToTop,
-          child: Icon(Icons.arrow_upward),
+          child: const Icon(Icons.arrow_upward),
         ),
       ),
-      body:
-      Container(
-        child: Column(
-          children: <Widget>[
-            Expanded(child:
-            AnimatedOpacity(
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: AnimatedOpacity(
               opacity: _visible ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 500),
               child: SingleChildScrollView(
                 controller: _scrollController,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: <Widget>[
-                    Html(data: "<h2>" + widget.title + "</h2>"),
+                    Html(data: "<h2>${widget.title ?? ''}</h2>"),
                     Container(
                       padding: const EdgeInsets.only(top: 0, bottom: 5),
                       child: Row(
                         children: [
-                          Container(
-                            margin: const EdgeInsets.only(left: 5.0),
-                            child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Icon(Icons.calendar_today)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 5.0),
+                            child: Icon(Icons.calendar_today),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 5.0),
+                            child: Text(
+                              parsedDateText,
+                              style: const TextStyle(fontSize: 16.0),
                             ),
                           ),
-                          Container(
-                              margin: const EdgeInsets.only(left: 5.0),
-                              child: Text(
-                                DateFormat('dd-MM-yyyy HH:mm:ss').format(
-                                    DateTime.parse(widget.publshedAt)),
-                                style: TextStyle(fontSize: 16.0),
-                              )
-                          ),
-                          // Container(
-                          //     margin: const EdgeInsets.only( left: 10.0),
-                          //     child: Text(
-                          //       widget.newsSource,
-                          //       style: TextStyle( fontSize: 15.0, color: Colors.black38),
-                          //     )
-                          // ),
-                          new IconButton(
-                            icon: new FaIcon(
+                          IconButton(
+                            icon: const FaIcon(
                               FontAwesomeIcons.facebook,
-                              color: Colors.blueAccent,),
+                              color: Colors.blueAccent,
+                            ),
                             onPressed: () async {
                               await SocialSharePlugin.shareToFeedFacebookLink(
-                                  quote: widget.desc,
-                                  url: 'https://kenhtingame.com/' +
-                                      widget.catNameKey +
-                                      '/' + widget.gameNewsKey + '/' +
-                                      widget.id);
+                                quote: widget.desc ?? '',
+                                url:
+                                'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}',
+                              );
                             },
                           ),
-                          // new IconButton(
-                          //   icon: new FaIcon(FontAwesomeIcons.instagram, color: Colors.red,),
-                          //   onPressed: () async {
-                          //     await SocialSharePlugin.shareToFeedInstagram(quote: 'Kênh Tin Game', url: 'https://kenhtingame.com');
-                          //   },
-                          // ),
-                          new IconButton(
-                            icon: new FaIcon(
-                              FontAwesomeIcons.twitter, color: Colors.blue,),
+                          IconButton(
+                            icon: const FaIcon(
+                              FontAwesomeIcons.twitter,
+                              color: Colors.blue,
+                            ),
                             onPressed: () async {
                               await SocialSharePlugin.shareToTwitterLink(
-                                  text: widget.desc,
-                                  url: 'https://kenhtingame.com/' +
-                                      widget.catNameKey +
-                                      '/' + widget.gameNewsKey + '/' +
-                                      widget.id);
+                                text: widget.desc ?? '',
+                                url:
+                                'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}',
+                              );
                             },
-                          )
+                          ),
                         ],
                       ),
                     ),
                     DescContentProcess(
-                        "<span style='font-size: 18px; font-style: italic;'><b>" +
-                            widget.desc + "</b></span>",
-                        int.parse(widget.newsCatId))
-                    ,
-                    NewsDetail(),
+                      "<span style='font-size: 18px; font-style: italic;'><b>${widget.desc ?? ''}</b></span>",
+                      int.tryParse(widget.newsCatId ?? '0') ?? 0,
+                    ),
+                    const NewsDetail(),
                     Container(
                       padding: const EdgeInsets.all(8.0),
-                      ///color: Colors.blue,
                       width: MediaQuery.of(context).size.width,
                       height: 1580,
                       child: ContainedTabBarView(
-                        tabs: [
-                          Text('CÙNG CHUYÊN MỤC', style:
-                          TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16,),),
-                          Text('HOT TRONG NGÀY', style:
-                          TextStyle(color: Colors.black87, fontWeight: FontWeight.w600, fontSize: 16,),),
+                        tabs: const [
+                          Text(
+                            'CÙNG CHUYÊN MỤC',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            'HOT TRONG NGÀY',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                            ),
+                          ),
                         ],
                         tabBarProperties: TabBarProperties(
                           height: 30.0,
                           indicatorColor: Colors.black,
                           indicatorWeight: 3.0,
                           labelColor: Colors.black,
-                          unselectedLabelColor: Colors.grey[400],
+                          unselectedLabelColor: Colors.grey,
                         ),
-                        views: [
+                        views: const [
                           RelatedNewsByCat(),
-                          HotNewsByCat()
+                          HotNewsByCat(),
                         ],
-                        onChange: (index) => print(index),
+                        onChange: (index) => debugPrint('Tab: $index'),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
-            )
             ),
-            if (_anchoredAdaptiveAd != null && _isLoaded)
-              Container(
-                color: Colors.green,
-                width: _anchoredAdaptiveAd.size.width.toDouble(),
-                height: _anchoredAdaptiveAd.size.height.toDouble(),
-                child: AdWidget(ad: _anchoredAdaptiveAd),
-              ),
-          ],
-        ),
+          ),
+          if (_anchoredAdaptiveAd != null && _isLoaded)
+            Container(
+              color: Colors.green,
+              width: _anchoredAdaptiveAd!.size.width.toDouble(),
+              height: _anchoredAdaptiveAd!.size.height.toDouble(),
+              child: AdWidget(ad: _anchoredAdaptiveAd!),
+            ),
+        ],
       ),
     );
   }

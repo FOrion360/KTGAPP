@@ -4,14 +4,15 @@ import 'package:ktg_news_app/views/homepage.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'custom_animation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter_config/flutter_config.dart';
+// import 'package:flutter_config/flutter_config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   HttpOverrides.global = new MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   WidgetsFlutterBinding.ensureInitialized(); // Required by FlutterConfig
-  await FlutterConfig.loadEnvVariables();
+  await dotenv.load(fileName: ".env");
   runApp(MyApp());
   configLoading();
 }
@@ -53,10 +54,12 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHttpOverrides extends HttpOverrides{
+class MyHttpOverrides extends HttpOverrides {
   @override
-  HttpClient createHttpClient(SecurityContext context){
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+  HttpClient createHttpClient(SecurityContext? context) {
+    final client = super.createHttpClient(context);
+    client.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true; // ⚠️ dev only
+    return client;
   }
 }

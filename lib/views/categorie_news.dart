@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,23 +6,25 @@ import 'package:ktg_news_app/helper/news.dart';
 import 'package:ktg_news_app/helper/widgets.dart';
 import 'package:bottom_loader/bottom_loader.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:flutter_config/flutter_config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class CategoryNews extends StatefulWidget {
+  const CategoryNews({
+    super.key,
+    required this.newsCategory,
+    required this.categoryCatName,
+  });
 
   final String newsCategory;
   final String categoryCatName;
 
-  CategoryNews({this.newsCategory, this.categoryCatName});
-
   @override
-  _CategoryNewsState createState() => _CategoryNewsState();
+  State<CategoryNews> createState() => _CategoryNewsState();
 }
 
 class _CategoryNewsState extends State<CategoryNews> {
-
-  //Admod
-  BannerAd _anchoredAdaptiveAd;
+  // Ads
+  BannerAd? _anchoredAdaptiveAd;
   bool _isLoaded = false;
 
   @override
@@ -32,71 +34,73 @@ class _CategoryNewsState extends State<CategoryNews> {
   }
 
   Future<void> _loadAd() async {
-    // Get an AnchoredAdaptiveBannerAdSize before loading the ad.
-    final AnchoredAdaptiveBannerAdSize size =
+    // Lấy kích thước banner adaptive theo orientation hiện tại
+    final AnchoredAdaptiveBannerAdSize? size =
     await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-        MediaQuery.of(context).size.width.truncate());
+      MediaQuery.of(context).size.width.truncate(),
+    );
 
     if (size == null) {
+      // ignore: avoid_print
       print('Unable to get height of anchored banner.');
       return;
     }
 
-    _anchoredAdaptiveAd = BannerAd(
-      // TODO: replace these test ad units with your own ad unit.
-      adUnitId: Platform.isAndroid
-          ? FlutterConfig.get('GOOGLE_ADMOD_BANNER_ID')
-          : FlutterConfig.get('GOOGLE_ADMOD_BANNER_ID'),
+    // Đọc adUnit từ .env (khuyến nghị 2 key khác nhau cho Android/iOS nếu cần)
+    final adUnitId = dotenv.env['GOOGLE_ADMOD_BANNER_ID'] ?? '';
+    if (adUnitId.isEmpty) {
+      // ignore: avoid_print
+      print('Missing GOOGLE_ADMOD_BANNER_ID in .env');
+      return;
+    }
+
+    final banner = BannerAd(
+      adUnitId: adUnitId,
       size: size,
-      request: AdRequest(),
+      request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (Ad ad) {
-          print('$ad loaded: ${ad.responseInfo}');
+          // ignore: avoid_print
+          print('$ad loaded: ${(ad as BannerAd).responseInfo}');
           setState(() {
-            // When the ad is loaded, get the ad size and use it to set
-            // the height of the ad container.
-            _anchoredAdaptiveAd = ad as BannerAd;
+            _anchoredAdaptiveAd = ad;
             _isLoaded = true;
           });
         },
         onAdFailedToLoad: (Ad ad, LoadAdError error) {
+          // ignore: avoid_print
           print('Anchored adaptive banner failedToLoad: $error');
           ad.dispose();
         },
       ),
     );
-    return _anchoredAdaptiveAd.load();
-  }
-  //Admod
 
-  ScrollController _scrollController;
+    await banner.load();
+  }
+
+  // Scroll & load more
+  late final ScrollController _scrollController;
   int _pageNo = 1;
-  BottomLoader bl;
+  BottomLoader? bl;
   bool _showBackToTopButton = false;
 
-  var newslist;
+  List<dynamic> newslist = [];
   bool _loading = true;
 
-  _scrollListener() {
-    // if (_scrollController.offset >= 500) {
-    //   _showBackToTopButton = true; // show the back-to-top button
-    // } else {
-    //   _showBackToTopButton = false; // hide the back-to-top button
-    // }
-
-    if (_scrollController.offset >= _scrollController.position.maxScrollExtent &&
+  void _scrollListener() {
+    if (_scrollController.offset >=
+        _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
       setState(() {
         _pageNo++;
-        //message = "reach the bottom" + _pageNo.toString();
-        bl.display();
+        bl?.display();
         getNews();
       });
     }
-    if (_scrollController.offset <= _scrollController.position.minScrollExtent &&
+    if (_scrollController.offset <=
+        _scrollController.position.minScrollExtent &&
         !_scrollController.position.outOfRange) {
       setState(() {
-        //message = "reach the top";
         _pageNo = 1;
         getNews();
       });
@@ -105,141 +109,170 @@ class _CategoryNewsState extends State<CategoryNews> {
 
   @override
   void dispose() {
-    _scrollController.dispose(); // dispose the controller
+    _scrollController.dispose();
+    _anchoredAdaptiveAd?.dispose();
     super.dispose();
   }
 
-  // This function is triggered when the user presses the back-to-top button
+  // Back to top
   void _scrollToTop() {
-    _scrollController.animateTo(0,
-        duration: Duration(seconds: 1), curve: Curves.linear);
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(seconds: 1),
+      curve: Curves.linear,
+    );
   }
 
   @override
   void initState() {
-    _scrollController = ScrollController();
-    _scrollController.addListener(_scrollListener);
-    getNews();
-    // TODO: implement initState
     super.initState();
+    _scrollController = ScrollController()..addListener(_scrollListener);
+    getNews();
   }
 
-  void getNews() async {
-    NewsForCategorie news = NewsForCategorie();
-    await news.getNewsForCategory(widget.newsCategory, _pageNo.toString(), '10', 'false','false', '0');
-    if(newslist != null && _pageNo != 1) {
-      newslist += news.news;
+  Future<void> getNews() async {
+    final news = NewsForCategorie();
+    await news.getNewsForCategory(
+      widget.newsCategory,
+      _pageNo.toString(),
+      '10',
+      'false',
+      'false',
+      '0',
+    );
+
+    if (newslist.isNotEmpty && _pageNo != 1) {
+      newslist.addAll(news.news); // Gộp danh sách đúng cách
+    } else {
+      newslist = List<dynamic>.from(news.news);
     }
-    else{
-      newslist = news.news;
-    }
+
     setState(() {
-       bl.hide();
+      bl?.hide();
       _loading = false;
-       //SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      // SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     });
   }
 
-  void getNewsMenu(String newsCategory, String pageNo) async {
-    NewsForCategorie news = NewsForCategorie();
-    await news.getNewsForCategory(newsCategory, pageNo, '10', 'false','false', '0');
-    if(newslist != null && _pageNo != 1) {
-      newslist += news.news;
+  Future<void> getNewsMenu(String newsCategory, String pageNo) async {
+    final news = NewsForCategorie();
+    await news.getNewsForCategory(
+      newsCategory,
+      pageNo,
+      '10',
+      'false',
+      'false',
+      '0',
+    );
+
+    if (newslist.isNotEmpty && _pageNo != 1) {
+      newslist.addAll(news.news);
+    } else {
+      newslist = List<dynamic>.from(news.news);
     }
-    else{
-      newslist = news.news;
-    }
+
     setState(() {
-      bl.hide();
+      bl?.hide();
       _loading = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    bl = new BottomLoader(context);
-    bl.style(
+    bl ??= BottomLoader(context)
+      ..style(
         message: 'Đang tải thêm tin tức...',
         backgroundColor: Colors.white,
-        messageTextStyle: TextStyle(
-            color: Colors.black, fontSize: 15.0, fontWeight: FontWeight.w600)
-    );
+        messageTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 15.0,
+          fontWeight: FontWeight.w600,
+        ),
+      );
 
     return Scaffold(
       appBar: AppBar(
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              "Kênh Tin ",
-              style:
-              TextStyle(color: Colors.black87, fontWeight: FontWeight.w600),
-            ),
-            Text(
-              "Game",
-              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
-            )
+          children: const [
+            Text("Kênh Tin ",
+                style: TextStyle(
+                    color: Colors.black87, fontWeight: FontWeight.w600)),
+            Text("Game",
+                style:
+                TextStyle(color: Colors.blue, fontWeight: FontWeight.w600)),
           ],
         ),
-        actions: <Widget>[
+        actions: const [
           Opacity(
             opacity: 0,
-            child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Icon(Icons.share,)),
-          )
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              child: Icon(Icons.share),
+            ),
+          ),
         ],
         backgroundColor: Colors.transparent,
         elevation: 0.0,
       ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 50.0),
-        child: FloatingActionButton(
-          onPressed: _scrollToTop,
-          child: Icon(Icons.arrow_upward),
-        ),
+      floatingActionButton: const Padding(
+        padding: EdgeInsets.only(bottom: 50.0),
+        child: _BackToTopButton(),
       ),
-      body: _loading ? Center(
-        child: CircularProgressIndicator(),
-      ) : Container(
-        child: Column(
-            children: <Widget>[
-        Expanded(child:
-            Container(
-              margin: EdgeInsets.only(top: 16),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+        children: <Widget>[
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(top: 16),
               child: ListView.builder(
-                  controller: _scrollController,
-                  itemCount: newslist.length,
-                  shrinkWrap: true,
-                  physics: ClampingScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    return NewsTile(
-                      imgUrl: newslist[index].urlToImage ?? "",
-                      title: newslist[index].title ?? "",
-                      desc: newslist[index].description ?? "",
-                      //content: newslist[index].content ?? "",
-                      posturl: newslist[index].articleUrl ?? "",
-                      categoryCatName: newslist[index].categoryCatName ?? "",
-                      publshedAt: newslist[index].publshedAt.toString() ?? "",
-                      catNameKey: newslist[index].catNameKey.toString() ?? "",
-                      gameNewsKey: newslist[index].gameNewsKey.toString() ?? "",
-                      id: newslist[index].id.toString() ?? "",
-                      newsCatId: newslist[index].newsCatId.toString() ?? "",
-                      newsSource: newslist[index].newsSource.toString() ?? "",
-                    );
-                  }),
+                controller: _scrollController,
+                itemCount: newslist.length,
+                shrinkWrap: true,
+                physics: const ClampingScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final n = newslist[index];
+                  return NewsTile(
+                    imgUrl: n.urlToImage ?? "",
+                    title: n.title ?? "",
+                    desc: n.description ?? "",
+                    posturl: n.articleUrl ?? "",
+                    categoryCatName: n.categoryCatName ?? "",
+                    // Giữ tên field gốc nếu model dùng 'publshedAt'
+                    publshedAt: (n.publshedAt ?? '').toString(),
+                    catNameKey: (n.catNameKey ?? '').toString(),
+                    gameNewsKey: (n.gameNewsKey ?? '').toString(),
+                    id: (n.id ?? '').toString(),
+                    newsCatId: (n.newsCatId ?? '').toString(),
+                    newsSource: (n.newsSource ?? '').toString(),
+                  );
+                },
+              ),
             ),
+          ),
+          if (_anchoredAdaptiveAd != null && _isLoaded)
+            Container(
+              color: Colors.green,
+              width: _anchoredAdaptiveAd!.size.width.toDouble(),
+              height: _anchoredAdaptiveAd!.size.height.toDouble(),
+              child: AdWidget(ad: _anchoredAdaptiveAd!),
             ),
-              if (_anchoredAdaptiveAd != null && _isLoaded)
-                Container(
-                  color: Colors.green,
-                  width: _anchoredAdaptiveAd.size.width.toDouble(),
-                  height: _anchoredAdaptiveAd.size.height.toDouble(),
-                  child: AdWidget(ad: _anchoredAdaptiveAd),
-                ),
-            ],
+        ],
       ),
-      ),
+    );
+  }
+}
+
+class _BackToTopButton extends StatelessWidget {
+  const _BackToTopButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.findAncestorStateOfType<_CategoryNewsState>();
+    return FloatingActionButton(
+      onPressed: state?._scrollToTop,
+      child: const Icon(Icons.arrow_upward),
     );
   }
 }
