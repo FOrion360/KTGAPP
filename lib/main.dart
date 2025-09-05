@@ -10,9 +10,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async {
   HttpOverrides.global = new MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
-  WidgetsFlutterBinding.ensureInitialized(); // Required by FlutterConfig
   await dotenv.load(fileName: ".env");
+  await MobileAds.instance.initialize();
   runApp(MyApp());
   configLoading();
 }
