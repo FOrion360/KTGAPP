@@ -1,0 +1,14 @@
+R_DEF: Internal format may change without notice
+local
+color launch_background
+drawable background
+drawable launch_background
+drawable splash
+mipmap ic_launcher
+mipmap launcher_icon
+string app_name
+string facebook_app_id
+style LaunchTheme
+style NormalTheme
+xml filepaths
+xml network_security_config

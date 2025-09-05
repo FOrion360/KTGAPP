@@ -24,7 +24,6 @@
         "http",
         "image",
         "intl",
-        "social_share_plugin",
         "url_launcher",
         "wakelock_plus",
         "webview_flutter"
@@ -131,16 +130,6 @@
       "dependencies": [
         "clock",
         "path"
-      ]
-    },
-    {
-      "name": "social_share_plugin",
-      "version": "0.4.2+2",
-      "dependencies": [
-        "flutter",
-        "social_share_plugin_android",
-        "social_share_plugin_ios",
-        "social_share_plugin_platform_interface"
       ]
     },
     {
@@ -482,30 +471,6 @@
       "dependencies": [
         "csslib",
         "source_span"
-      ]
-    },
-    {
-      "name": "social_share_plugin_platform_interface",
-      "version": "0.1.0+1",
-      "dependencies": [
-        "flutter",
-        "plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "social_share_plugin_ios",
-      "version": "0.1.0+1",
-      "dependencies": [
-        "flutter",
-        "social_share_plugin_platform_interface"
-      ]
-    },
-    {
-      "name": "social_share_plugin_android",
-      "version": "0.1.0+1",
-      "dependencies": [
-        "flutter",
-        "social_share_plugin_platform_interface"
       ]
     },
     {

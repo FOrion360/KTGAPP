@@ -2,10 +2,10 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:social_share_plugin/social_share_plugin.dart' as SocialSharePlugin;
+//import 'package:social_share_plugin/social_share_plugin.dart' as SocialSharePlugin;
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:social_share_plugin/social_share_plugin.dart';
+//import 'package:social_share_plugin/social_share_plugin.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -329,6 +329,22 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
     );
   }
 
+  Future<void> shareToFacebookLink({required String url, String? quote}) async {
+    final u = Uri.https('www.facebook.com', '/sharer/sharer.php', {
+      'u': url,
+      if (quote != null && quote.isNotEmpty) 'quote': quote,
+    });
+    await launchUrl(u, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> shareToTwitterLink({required String url, String? text}) async {
+    final u = Uri.https('twitter.com', '/intent/tweet', {
+      'url': url,
+      if (text != null && text.isNotEmpty) 'text': text,
+    });
+    await launchUrl(u, mode: LaunchMode.externalApplication);
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -407,11 +423,13 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
             icon: const Icon(Icons.share),
             highlightColor: Colors.pink,
             onPressed: () async {
-              await SocialSharePlugin.shareToFeedFacebookLink(
-                quote: 'Kênh Tin Game - ${widget.categoryCatName ?? ''}',
-                url:
-                'https://kenhtingame.com/${widget.catNameKey ?? '0'}/1',
-              );
+              // await SocialSharePlugin.shareToFeedFacebookLink(
+              //   quote: 'Kênh Tin Game - ${widget.categoryCatName ?? ''}',
+              //   url:
+              //   'https://kenhtingame.com/${widget.catNameKey ?? '0'}/1',
+              // );
+
+              await shareToFacebookLink(quote: 'Kênh Tin Game - ${widget.categoryCatName ?? ''}', url: 'https://kenhtingame.com/${widget.catNameKey ?? '0'}/1');
             },
           ),
         ],
@@ -458,11 +476,14 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
                               color: Colors.blueAccent,
                             ),
                             onPressed: () async {
-                              await SocialSharePlugin.shareToFeedFacebookLink(
-                                quote: widget.desc ?? '',
-                                url:
-                                'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}',
-                              );
+                              // await SocialSharePlugin.shareToFeedFacebookLink(
+                              //   quote: widget.desc ?? '',
+                              //   url:
+                              //   'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}',
+                              // );
+
+                              await shareToFacebookLink(quote: widget.desc ?? '', url: 'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}');
+
                             },
                           ),
                           IconButton(
@@ -471,11 +492,14 @@ class _ArticleViewState extends State<ArticleView> with TickerProviderStateMixin
                               color: Colors.blue,
                             ),
                             onPressed: () async {
-                              await SocialSharePlugin.shareToTwitterLink(
-                                text: widget.desc ?? '',
-                                url:
-                                'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}',
-                              );
+                              // await SocialSharePlugin.shareToTwitterLink(
+                              //   text: widget.desc ?? '',
+                              //   url:
+                              //   'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}',
+                              // );
+
+                              await shareToTwitterLink(text: widget.desc ?? '', url: 'https://kenhtingame.com/${widget.catNameKey ?? '0'}/${widget.gameNewsKey ?? ''}/${widget.id ?? ''}');
+
                             },
                           ),
                         ],

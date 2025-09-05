@@ -1,4 +1,4 @@
-package com.example.ktg_news_app
+package com.kenhtingame.ktg_news_app
 
 import io.flutter.embedding.android.FlutterActivity
 

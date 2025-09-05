@@ -428,30 +428,6 @@
       "languageVersion": "3.8"
     },
     {
-      "name": "social_share_plugin",
-      "rootUri": "file:///Users/user/.pub-cache/hosted/pub.dev/social_share_plugin-0.4.2+2",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "social_share_plugin_android",
-      "rootUri": "file:///Users/user/.pub-cache/hosted/pub.dev/social_share_plugin_android-0.1.0+1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "social_share_plugin_ios",
-      "rootUri": "file:///Users/user/.pub-cache/hosted/pub.dev/social_share_plugin_ios-0.1.0+1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "social_share_plugin_platform_interface",
-      "rootUri": "file:///Users/user/.pub-cache/hosted/pub.dev/social_share_plugin_platform_interface-0.1.0+1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "source_span",
       "rootUri": "file:///Users/user/.pub-cache/hosted/pub.dev/source_span-1.10.1",
       "packageUri": "lib/",
